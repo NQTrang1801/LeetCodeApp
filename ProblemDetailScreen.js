@@ -5,22 +5,25 @@ import RenderHtml from 'react-native-render-html';
 import { useWindowDimensions } from 'react-native';
 import { COMMUNITY_SOLUTIONS_QUERY, COMMUNITY_SOLUTION_QUERY, QUESTION_CONTENT_QUERY } from './queries';
 import { GraphQL_LC } from '../LeetCodeApp/src/configs/config.leetcode';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, Ionicons, AntDesign } from '@expo/vector-icons';
+import IdeCode from './IdeCode';
+import executePythonCode from './apiRequests';
 
 const ProblemDetailScreen = ({ route }) => {
-  const { problem, question__title, difficulty, total_acs, total_submitted } = route.params;
+  const { question_id, problem, question__title, difficulty, total_submitted } = route.params;
   const [problemData, setProblemData] = useState(null);
   const [showDetail, setShowDetail] = useState(true);
   const [solutionsList, setSolutionsList] = useState([]);
   const [showSolutions, setShowSolutions] = useState(false);
   const [selectedSolution, setSelectedSolution] = useState(null);
   const [solutionDetail, setSolutionDetail] = useState(null);
+  const [showIDE, setShowIDE] = useState(false);
 
   const cookies = GraphQL_LC.COOKIE;
 
   const skipSolutions = 0;
   const numberSolutions = 10;
-
+  console.log(question_id)
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -122,18 +125,31 @@ const ProblemDetailScreen = ({ route }) => {
       setShowSolutions(false);
     }}>
       <View style={[styles.solutionItem, selectedSolution === item && styles.selectedSolution]}>
-        <Text style={styles.solutionTitle}>{item.title}</Text>
+        <Text style={styles.solutionDetailTitle}>{item.title}</Text>
         <Text>Username: {item.post.author.username}</Text>
         <Text>ID: {item.id}</Text>
       </View>
     </TouchableOpacity>
   );
 
+  const handlePressOutside = () => {
+    Keyboard.dismiss();
+  };
+  const handleRunCode = async () => {
+    try {
+      const response = await executePythonCode('python3', `print("Hello world con ga")`);
+      // Handle response if needed
+    } catch (error) {
+      // Handle error if needed
+      console.error(error);
+    }
+  };
 
   const { width } = useWindowDimensions();
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{question__title} | Difficulty: {"level " + difficulty} | submitted: {total_submitted}</Text>
+      <Text style={styles.title}>{question__title}</Text>
+      <Text style={styles.title}>Difficulty: {"level " + difficulty} | submitted: {total_submitted}</Text>
       {problemData ? (
         <>
           <View style={styles.infoContainer}>
@@ -141,6 +157,7 @@ const ProblemDetailScreen = ({ route }) => {
               <TouchableOpacity onPress={() => {
                   setShowDetail(true);
                   setShowSolutions(false);
+                  setShowIDE(false);
                   setSolutionDetail(null);
                 }}>
                 <View>
@@ -150,19 +167,21 @@ const ProblemDetailScreen = ({ route }) => {
               <TouchableOpacity onPress={() => {
                   setShowDetail(false);
                   setShowSolutions(false);
+                  setShowIDE(true);
                   setSolutionDetail(null);
                 }}>
                 <View>
-                  <MaterialCommunityIcons name="file-document-outline" size={24} color="black" />
+                  <Ionicons name="terminal" size={24} color="black" />
                 </View>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => {
                   setShowDetail(false);
                   setShowSolutions(true);
+                  setShowIDE(false);
                   setSolutionDetail(null);
                 }}>
                 <View>
-                  <MaterialCommunityIcons name="file-document-outline" size={24} color="black" />
+                  <AntDesign name="solution1" size={24} color="black" />
                 </View>
               </TouchableOpacity>
             </View>
@@ -182,10 +201,31 @@ const ProblemDetailScreen = ({ route }) => {
             
           )}
 
+          {showIDE && (
+            <>
+              <ScrollView style={styles.scrollView && styles.IDEContainer1}>
+                <TouchableOpacity style={{ flex: 1 }} onPressIn={handlePressOutside}>
+                  <View style={styles.IDEContainer2}>
+                    <IdeCode
+
+                    />
+                  </View>
+                </TouchableOpacity>
+                
+              </ScrollView>
+              <TouchableOpacity onPress={() => {
+                  handleRunCode();
+                }}>
+                  <Text>submitted</Text>
+                </TouchableOpacity>
+            </>
+            
+          )}
+
           {showSolutions && (
             <>
               {solutionsList && (
-                <FlatList style={styles.scrollView && styles.solutionDetailContainer}
+                <FlatList 
                   data={solutionsList}
                   renderItem={renderSolutionItem}
                   keyExtractor={(item) => item.id.toString()}
@@ -274,8 +314,22 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     marginTop: 20,
   },
+  IDEContainer1: {
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    marginTop: 20,
+    maxHeight: 300
+  },
+  IDEContainer2: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    maxHeight: 280
+  },
   solutionDetailTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 10,
   },

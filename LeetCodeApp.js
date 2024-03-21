@@ -52,8 +52,8 @@ const LeetCodeApp = () => {
   };
 
   const handleProblemPress = (problem) => {
-    console.log('Pressed problem:', problem);
-    navigation.navigate('ProblemDetail', { problem: problem.stat.question__title_slug, question__title:problem.stat.question__title, difficulty: problem.difficulty.level, total_acs: problem.total_acs, total_submitted: problem.stat.total_submitted});
+    console.log('Pressed problem:', problem.stat.question_id);
+    navigation.navigate('ProblemDetail', { question_id: problem.stat.question_id, problem: problem.stat.question__title_slug, question__title:problem.stat.question__title, difficulty: problem.difficulty.level, total_submitted: problem.stat.total_submitted});
   };
   
 
