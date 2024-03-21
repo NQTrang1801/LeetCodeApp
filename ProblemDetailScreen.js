@@ -1,26 +1,25 @@
 'use strict'
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Button, ScrollView, FlatList, TouchableOpacity } from 'react-native'; // Import TouchableOpacity
+import { View, Text, StyleSheet, Button, ScrollView, FlatList, TouchableOpacity, TouchableHighlight } from 'react-native'; // Import TouchableOpacity
 import RenderHtml from 'react-native-render-html';
 import { useWindowDimensions } from 'react-native';
 import { COMMUNITY_SOLUTIONS_QUERY, COMMUNITY_SOLUTION_QUERY, QUESTION_CONTENT_QUERY } from './queries';
-import IdeCode from './IdeCode';
-import { GraphQL_LC } from './src/configs/config.api.leetcode'
+import { GraphQL_LC } from '../LeetCodeApp/src/configs/config.leetcode';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+
 const ProblemDetailScreen = ({ route }) => {
   const { problem, question__title, difficulty, total_acs, total_submitted } = route.params;
   const [problemData, setProblemData] = useState(null);
-  const [showDetail, setShowDetail] = useState(false);
+  const [showDetail, setShowDetail] = useState(true);
   const [solutionsList, setSolutionsList] = useState([]);
   const [showSolutions, setShowSolutions] = useState(false);
   const [selectedSolution, setSelectedSolution] = useState(null);
   const [solutionDetail, setSolutionDetail] = useState(null);
 
-  // const cookies = {
-  //   'LEETCODE_SESSION': GraphQL_LC.COOKIE.SESSION,
-  //   'csrfToken': CSRF_TOKEN
-  // };
+  const cookies = GraphQL_LC.COOKIE;
 
-  console.log(GraphQL_LC)
+  const skipSolutions = 0;
+  const numberSolutions = 10;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -31,7 +30,7 @@ const ProblemDetailScreen = ({ route }) => {
           "titleSlug": problem
         };
 
-        const response = await fetch(GRAPH_QL_URl, {
+        const response = await fetch(GraphQL_LC.URL.GRAPH_QL_URl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -58,15 +57,15 @@ const ProblemDetailScreen = ({ route }) => {
 
         const variables = {
           "questionSlug": problem,
-          "skip": 0,
-          "first": 5,
+          "skip": skipSolutions,
+          "first": numberSolutions,
           "orderBy": "hot",
           "query": "",
           "languageTags": ["python3"],
           "topicTags": []
         };
 
-        const response = await fetch(GRAPH_QL_URl, {
+        const response = await fetch(GraphQL_LC.URL.GRAPH_QL_URl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -95,7 +94,7 @@ const ProblemDetailScreen = ({ route }) => {
     try {
       const query = COMMUNITY_SOLUTION_QUERY;
       const variables = { "topicId": topicId };
-      const response = await fetch(GRAPH_QL_URl, {
+      const response = await fetch(GraphQL_LC.URL.GRAPH_QL_URl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -129,7 +128,7 @@ const ProblemDetailScreen = ({ route }) => {
       </View>
     </TouchableOpacity>
   );
-  
+
 
   const { width } = useWindowDimensions();
   return (
@@ -139,38 +138,38 @@ const ProblemDetailScreen = ({ route }) => {
         <>
           <View style={styles.infoContainer}>
             <View style={styles.buttonContainer}>
-              <Button style={styles.buttonItem} title="Detail" onPress={() => {
-                setShowDetail(true);
-                setShowSolutions(false);
-                setSolutionDetail(null);
-              }} />
-              <Button style={styles.buttonItem} title="IDE" onPress={() => {
-                setShowDetail(false);
-                setShowSolutions(false);
-                setSolutionDetail(null);
-                valueF = {
-                  defaultCode: `
-                    # Code
-                    # Solution 1
-                    \`\`\`cpp
-                    #include <iostream>
-                    int main() {
-                      std::cout << "Hello, world!" << std::endl;
-                      return 0;
-                    }
-                    `
-                };
-              }} />
-              <Button style={styles.buttonItem} title="Solutions" onPress={() => {
-                setShowDetail(false);
-                setShowSolutions(true);
-                setSolutionDetail(null);
-              }} />
+              <TouchableOpacity onPress={() => {
+                  setShowDetail(true);
+                  setShowSolutions(false);
+                  setSolutionDetail(null);
+                }}>
+                <View>
+                  <MaterialCommunityIcons name="file-document-outline" size={24} color="black" />
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => {
+                  setShowDetail(false);
+                  setShowSolutions(false);
+                  setSolutionDetail(null);
+                }}>
+                <View>
+                  <MaterialCommunityIcons name="file-document-outline" size={24} color="black" />
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => {
+                  setShowDetail(false);
+                  setShowSolutions(true);
+                  setSolutionDetail(null);
+                }}>
+                <View>
+                  <MaterialCommunityIcons name="file-document-outline" size={24} color="black" />
+                </View>
+              </TouchableOpacity>
             </View>
           </View>
           {showDetail && (
-            // Thay thế các ký tự đặc biệt
-            <ScrollView style={styles.scrollView}>
+            <ScrollView style={styles.scrollView && styles.solutionDetailContainer}>
+              <View style={styles.viewContainer}>
               <RenderHtml
                 contentWidth={width}
                 source={{
@@ -178,13 +177,15 @@ const ProblemDetailScreen = ({ route }) => {
                 }}
                 ignoredDomTags={['font']}
               />
+              </View>
             </ScrollView>
+            
           )}
 
           {showSolutions && (
             <>
               {solutionsList && (
-                <FlatList
+                <FlatList style={styles.scrollView && styles.solutionDetailContainer}
                   data={solutionsList}
                   renderItem={renderSolutionItem}
                   keyExtractor={(item) => item.id.toString()}
@@ -197,8 +198,8 @@ const ProblemDetailScreen = ({ route }) => {
         <Text>Loading...</Text>
       )}
       {solutionDetail ? (
-        <ScrollView style={styles.scrollView}>
-          <View style={styles.solutionDetailContainer}>
+        <ScrollView style={styles.scrollView && styles.solutionDetailContainer}>
+          <View>
             <Text style={styles.solutionDetailTitle}>{solutionDetail.title}</Text>
             <RenderHtml
               contentWidth={width}
@@ -207,8 +208,7 @@ const ProblemDetailScreen = ({ route }) => {
                 <pre style="font-family: 'Arial', sans-serif;">${solutionDetail.post?.content
                     .replace(/</g, "&lt;")
                     .replace(/\\n/g, '<br>')
-                  // Thay thế \\n bằng thẻ <br>
-                  }</pre>` // Thay thế ``` bằng thẻ </code>
+                  }</pre>`
               }}
               ignoredDomTags={['font', 'int']}
             />
@@ -227,6 +227,9 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#fff',
   },
+  viewContainer: {
+    paddingBottom: 20,
+  },
   title: {
     fontSize: 10,
     fontWeight: 'bold',
@@ -242,8 +245,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   scrollView: {
-    maxHeight: 400,
     marginTop: 10,
+    paddingBottom: 20,
   },
   content: {
     fontSize: 16,
@@ -251,16 +254,12 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: "space-between",
-    height: 20,
-  },
-  buttonItem: {
-    height: 10,
-    width: 20,
-    fontSize: 5
+    height: 30,
+    
   },
   solutionItem: {
     padding: 10,
-    marginBottom: 10,
+    marginTop: 10,
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 5,
