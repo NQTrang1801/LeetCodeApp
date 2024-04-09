@@ -1,29 +1,32 @@
 'use strict'
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Button, ScrollView, FlatList, TouchableOpacity, TouchableHighlight } from 'react-native'; // Import TouchableOpacity
+import { View, Text, StyleSheet, ScrollView, FlatList, TouchableOpacity, Keyboard } from 'react-native'; 
 import RenderHtml from 'react-native-render-html';
 import { useWindowDimensions } from 'react-native';
 import { COMMUNITY_SOLUTIONS_QUERY, COMMUNITY_SOLUTION_QUERY, QUESTION_CONTENT_QUERY } from './queries';
 import { GraphQL_LC } from '../LeetCodeApp/src/configs/config.leetcode';
-import { MaterialCommunityIcons, Ionicons, AntDesign } from '@expo/vector-icons';
+import { MaterialCommunityIcons, Ionicons, AntDesign, Zocial } from '@expo/vector-icons';
 import IdeCode from './IdeCode';
 import executePythonCode from './apiRequests';
+import { encode as base64Encode, decode as base64Decode } from 'base-64';
 
 const ProblemDetailScreen = ({ route }) => {
   const { question_id, problem, question__title, difficulty, total_submitted } = route.params;
+  const { width } = useWindowDimensions();
   const [problemData, setProblemData] = useState(null);
   const [showDetail, setShowDetail] = useState(true);
   const [solutionsList, setSolutionsList] = useState([]);
   const [showSolutions, setShowSolutions] = useState(false);
   const [selectedSolution, setSelectedSolution] = useState(null);
   const [solutionDetail, setSolutionDetail] = useState(null);
+  const [getResponse, setResponse] = useState(null);
   const [showIDE, setShowIDE] = useState(false);
-
+  const [code, setCode] = useState('');
   const cookies = GraphQL_LC.COOKIE;
-
   const skipSolutions = 0;
   const numberSolutions = 10;
-  console.log(question_id)
+  const lang = 'python3';
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -115,6 +118,42 @@ const ProblemDetailScreen = ({ route }) => {
     } catch (error) {
       console.error(error);
     }
+
+
+    const submitCode = async () => {
+      const csrfToken = "Pdg.u.hFVGTLBJWmxyPauurEX4K9o29bkA5scDKU4SU-1711035060-1.0.1.1-SLSu3G4rDfTmVdE6b4HXfC9Aemk_7yfZi82hGmVXfP6fDyCKxN27apPmr.nvdrA..q0VAX8VITHbvxt02JbJaA";
+      const cookies = "LEETCODE_SESSION=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.e30.KpufdHIo8CeGduwC5DCQoba8bmWCjJ9mUTYQ4npFdlk; csrftoken=qXVvyTWOsqgH8HguryXHnRaPQSM1R9KieBUMdTgeKjuV1L81nWMEWoWJnwQt2mRU";
+      const url = "https://leetcode.com/problems/two-sum/interpret_solution/";
+    
+      const requestBody = {
+        lang: "python3",
+        question_id: "1",
+        typed_code: "class Solution:\n    def twoSum(self, nums: List[int], target: int) -> List[int]:    return [4]",
+        data_input: "[2,7,11,15]\n9\n[3,2,4]\n6\n[3,3]\n6"
+      };
+    
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-csrftoken': csrfToken,
+            'Cookie': cookies
+          },
+          body: JSON.stringify(requestBody)
+        });
+    
+        if (!response.ok) {
+          throw new Error('Failed to submit code');
+        }
+    
+        const responseData = await response.json();
+        console.log(responseData); // Xử lý dữ liệu trả về ở đây
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    
   };
 
   const renderSolutionItem = ({ item }) => (
@@ -135,17 +174,20 @@ const ProblemDetailScreen = ({ route }) => {
   const handlePressOutside = () => {
     Keyboard.dismiss();
   };
+
   const handleRunCode = async () => {
     try {
-      const response = await executePythonCode('python3', `print("Hello world con ga")`);
-      // Handle response if needed
+      const dataInput = ""; // Đặt dữ liệu đầu vào ở đây
+      const responsePromise = await executePythonCode(lang, code, dataInput);
+      responsePromise.stdout = base64Decode(responsePromise.stdout);
+      console.log(responsePromise);
+      setResponse(responsePromise);
     } catch (error) {
-      // Handle error if needed
       console.error(error);
     }
   };
+  
 
-  const { width } = useWindowDimensions();
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{question__title}</Text>
@@ -155,31 +197,31 @@ const ProblemDetailScreen = ({ route }) => {
           <View style={styles.infoContainer}>
             <View style={styles.buttonContainer}>
               <TouchableOpacity onPress={() => {
-                  setShowDetail(true);
-                  setShowSolutions(false);
-                  setShowIDE(false);
-                  setSolutionDetail(null);
-                }}>
+                setShowDetail(true);
+                setShowSolutions(false);
+                setShowIDE(false);
+                setSolutionDetail(null);
+              }}>
                 <View>
                   <MaterialCommunityIcons name="file-document-outline" size={24} color="black" />
                 </View>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => {
-                  setShowDetail(false);
-                  setShowSolutions(false);
-                  setShowIDE(true);
-                  setSolutionDetail(null);
-                }}>
+                setShowDetail(false);
+                setShowSolutions(false);
+                setShowIDE(true);
+                setSolutionDetail(null);
+              }}>
                 <View>
                   <Ionicons name="terminal" size={24} color="black" />
                 </View>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => {
-                  setShowDetail(false);
-                  setShowSolutions(true);
-                  setShowIDE(false);
-                  setSolutionDetail(null);
-                }}>
+                setShowDetail(false);
+                setShowSolutions(true);
+                setShowIDE(false);
+                setSolutionDetail(null);
+              }}>
                 <View>
                   <AntDesign name="solution1" size={24} color="black" />
                 </View>
@@ -189,43 +231,59 @@ const ProblemDetailScreen = ({ route }) => {
           {showDetail && (
             <ScrollView style={styles.scrollView && styles.solutionDetailContainer}>
               <View style={styles.viewContainer}>
-              <RenderHtml
-                contentWidth={width}
-                source={{
-                  html: problemData.content
-                }}
-                ignoredDomTags={['font']}
-              />
+                <RenderHtml
+                  contentWidth={width}
+                  source={{
+                    html: problemData.content
+                  }}
+                  ignoredDomTags={['font']}
+                />
               </View>
             </ScrollView>
-            
+
           )}
 
           {showIDE && (
             <>
               <ScrollView style={styles.scrollView && styles.IDEContainer1}>
-                <TouchableOpacity style={{ flex: 1 }} onPressIn={handlePressOutside}>
+                <TouchableOpacity style={{ flex: 1 }}>
                   <View style={styles.IDEContainer2}>
-                    <IdeCode
-
-                    />
+                    <IdeCode initialValue={code} onCodeChange={setCode} />
                   </View>
                 </TouchableOpacity>
-                
+
               </ScrollView>
               <TouchableOpacity onPress={() => {
-                  handleRunCode();
-                }}>
-                  <Text>submitted</Text>
-                </TouchableOpacity>
+                handleRunCode();
+                handlePressOutside();
+              }}>
+                <View>
+                  <Zocial name="googleplay" size={24} color="black" />
+                </View>
+              </TouchableOpacity>
+              {getResponse && (
+                <ScrollView style={styles.scrollView && styles.solutionDetailContainer}>
+                  <View>
+                    <RenderHtml
+                      contentWidth={width}
+                      source={{
+                        html: `
+                        <pre style="font-family: 'Arial', sans-serif;">${getResponse.stdout ? getResponse.stdout.replace(/</g, "&lt;").replace(/\\n/g, '<br>') : ''}</pre>`
+                      }}
+                      ignoredDomTags={['font', 'int']}
+                    />
+                  </View>
+                </ScrollView>
+              )}
+
             </>
-            
+
           )}
 
           {showSolutions && (
             <>
               {solutionsList && (
-                <FlatList 
+                <FlatList
                   data={solutionsList}
                   renderItem={renderSolutionItem}
                   keyExtractor={(item) => item.id.toString()}
@@ -295,7 +353,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: "space-between",
     height: 30,
-    
+
   },
   solutionItem: {
     padding: 10,
